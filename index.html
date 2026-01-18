@@ -1679,46 +1679,62 @@ const a=JSON.parse(document.getElementById("wp-emoji-settings").textContent),o=(
     function submitForm() {
         console.log('[Piemonte] Enviando formulario:', formData);
 
-        // Enviar para RD Station se habilitado
+        // Enviar para RD Station via iframe oculto (evita CORS)
         if (CONFIG.rdStation.enabled && CONFIG.rdStation.publicToken !== 'SEU_TOKEN_PUBLICO_RD_STATION') {
-            // Usar a integração JavaScript do RD Station
-            const rdPayload = {
+            console.log('[Piemonte] Enviando para RD Station...');
+
+            // Criar iframe oculto para receber o submit
+            var iframeName = 'rdstation_iframe_' + Date.now();
+            var iframe = document.createElement('iframe');
+            iframe.name = iframeName;
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+
+            // Criar formulário oculto
+            var rdForm = document.createElement('form');
+            rdForm.method = 'POST';
+            rdForm.action = 'https://www.rdstation.com.br/api/1.3/conversions';
+            rdForm.target = iframeName;
+            rdForm.style.display = 'none';
+
+            // Dados do formulário
+            var rdData = {
                 token_rdstation: CONFIG.rdStation.publicToken,
                 identificador: currentFormType === 'ebook' ? 'download-ebook-piemonte' : 'contato-piemonte',
                 nome: formData.name,
-                email: formData.email || formData.phone + '@lead.piemonte.com.br', // RD exige email
+                email: formData.email || formData.phone.replace(/\D/g, '') + '@lead.piemonteatibaia.com.br',
                 telefone: formData.phone,
                 celular: formData.phone,
-                // Campos personalizados do onboarding
-                interesse: formData.interesse,
-                tempo_para_compra: formData.tempoCompra,
-                faixa_investimento: formData.faixaInvestimento,
-                como_conheceu: formData.comoConheceu,
-                // Informações extras
-                origem: formData.source || 'site-piemonte',
-                pagina: window.location.href,
-                tipo_formulario: currentFormType
+                interesse: formData.interesse || '',
+                tempo_para_compra: formData.tempoCompra || '',
+                faixa_investimento: formData.faixaInvestimento || '',
+                como_conheceu: formData.comoConheceu || '',
+                c_utmz: document.cookie.match(/__utmz=([^;]+)/) ? document.cookie.match(/__utmz=([^;]+)/)[1] : '',
+                traffic_source: formData.source || document.referrer || 'direto',
+                client_id: document.cookie.match(/_ga=([^;]+)/) ? document.cookie.match(/_ga=([^;]+)/)[1] : ''
             };
 
-            console.log('[Piemonte] Enviando para RD Station:', rdPayload);
-
-            // Método 1: Via RD Station Forms API (se o script estiver carregado)
-            if (typeof RDStationForms !== 'undefined') {
-                RDStationForms.identify(rdPayload);
+            // Adicionar campos ao formulário
+            for (var key in rdData) {
+                if (rdData.hasOwnProperty(key)) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = rdData[key];
+                    rdForm.appendChild(input);
+                }
             }
 
-            // Método 2: Via endpoint de integração do RD Station
-            fetch('https://www.rdstation.com.br/api/1.3/conversions', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(rdPayload)
-            })
-            .then(function(response) {
-                console.log('[Piemonte] RD Station response:', response.status);
-            })
-            .catch(function(e) {
-                console.error('[Piemonte] RD Station Err:', e);
-            });
+            document.body.appendChild(rdForm);
+            rdForm.submit();
+
+            console.log('[Piemonte] Dados enviados para RD Station:', rdData);
+
+            // Limpar após 3 segundos
+            setTimeout(function() {
+                if (rdForm.parentNode) rdForm.parentNode.removeChild(rdForm);
+                if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+            }, 3000);
         }
 
         // Track no GTM
