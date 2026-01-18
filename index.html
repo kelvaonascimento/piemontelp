@@ -29,6 +29,12 @@ fbq('track', 'PageView');
 src="https://www.facebook.com/tr?id=SEU_PIXEL_ID&ev=PageView&noscript=1"
 /></noscript>
 <!-- End Meta Pixel Code -->
+
+<!-- RD Station Marketing - SUBSTITUA 'SEU_TOKEN_PUBLICO' pelo seu token público -->
+<!-- Pegue em: RD Station > Configurações > Integrações > Código de Monitoramento -->
+<script type="text/javascript" async src="https://d335luupugsy2.cloudfront.net/js/loader-scripts/SEU_TOKEN_PUBLICO-loader.js"></script>
+<!-- End RD Station Marketing -->
+
 <meta name='robots' content='max-image-preview:large' />
 <link rel="alternate" type="application/rss+xml" title="Feed para Piemonté &raquo;" href="feed/index.html" />
 <link rel="alternate" type="application/rss+xml" title="Feed de comentários para Piemonté &raquo;" href="comments/feed/index.html" />
@@ -1489,9 +1495,8 @@ const a=JSON.parse(document.getElementById("wp-emoji-settings").textContent),o=(
     // ==========================================
     const CONFIG = {
         rdStation: {
-            enabled: false,
-            apiToken: 'SEU_TOKEN_RD_STATION',
-            formEndpoint: 'https://api.rd.services/platform/conversions?api_key=SEU_API_KEY'
+            enabled: true, // Mude para true quando configurar o token
+            publicToken: 'SEU_TOKEN_PUBLICO_RD_STATION' // Pegue em: RD Station > Configurações > Integrações > Código de Monitoramento
         },
         ebookUrl: 'wp-content/uploads/2025/08/Folder-Piemonte.pdf'
     };
@@ -1675,21 +1680,45 @@ const a=JSON.parse(document.getElementById("wp-emoji-settings").textContent),o=(
         console.log('[Piemonte] Enviando formulario:', formData);
 
         // Enviar para RD Station se habilitado
-        if (CONFIG.rdStation.enabled) {
-            const payload = {
-                event_type: 'CONVERSION',
-                event_family: 'CDP',
-                payload: {
-                    conversion_identifier: currentFormType === 'ebook' ? 'download-ebook-piemonte' : 'contato-piemonte',
-                    name: formData.name, email: formData.email || '', mobile_phone: formData.phone,
-                    cf_interesse: formData.interesse, cf_tempo_compra: formData.tempoCompra,
-                    cf_faixa_investimento: formData.faixaInvestimento, cf_como_conheceu: formData.comoConheceu,
-                    traffic_source: formData.source || document.referrer || 'direct'
-                }
+        if (CONFIG.rdStation.enabled && CONFIG.rdStation.publicToken !== 'SEU_TOKEN_PUBLICO_RD_STATION') {
+            // Usar a integração JavaScript do RD Station
+            const rdPayload = {
+                token_rdstation: CONFIG.rdStation.publicToken,
+                identificador: currentFormType === 'ebook' ? 'download-ebook-piemonte' : 'contato-piemonte',
+                nome: formData.name,
+                email: formData.email || formData.phone + '@lead.piemonte.com.br', // RD exige email
+                telefone: formData.phone,
+                celular: formData.phone,
+                // Campos personalizados do onboarding
+                interesse: formData.interesse,
+                tempo_para_compra: formData.tempoCompra,
+                faixa_investimento: formData.faixaInvestimento,
+                como_conheceu: formData.comoConheceu,
+                // Informações extras
+                origem: formData.source || 'site-piemonte',
+                pagina: window.location.href,
+                tipo_formulario: currentFormType
             };
-            fetch(CONFIG.rdStation.formEndpoint, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
-            }).catch(function(e) { console.error('[Piemonte] RD Err:', e); });
+
+            console.log('[Piemonte] Enviando para RD Station:', rdPayload);
+
+            // Método 1: Via RD Station Forms API (se o script estiver carregado)
+            if (typeof RDStationForms !== 'undefined') {
+                RDStationForms.identify(rdPayload);
+            }
+
+            // Método 2: Via endpoint de integração do RD Station
+            fetch('https://www.rdstation.com.br/api/1.3/conversions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(rdPayload)
+            })
+            .then(function(response) {
+                console.log('[Piemonte] RD Station response:', response.status);
+            })
+            .catch(function(e) {
+                console.error('[Piemonte] RD Station Err:', e);
+            });
         }
 
         // Track no GTM
