@@ -1700,17 +1700,22 @@ const a=JSON.parse(document.getElementById("wp-emoji-settings").textContent),o=(
             // Dados do formulário
             var rdData = {
                 token_rdstation: CONFIG.rdStation.publicToken,
-                identificador: currentFormType === 'ebook' ? 'download-ebook-piemonte' : 'contato-piemonte',
+                identificador: currentFormType === 'ebook' ? 'ebook-piemonte' : 'contato-piemonte',
                 nome: formData.name,
                 email: formData.email || formData.phone.replace(/\D/g, '') + '@lead.piemonteatibaia.com.br',
                 telefone: formData.phone,
                 celular: formData.phone,
-                interesse: formData.interesse || '',
-                tempo_para_compra: formData.tempoCompra || '',
-                faixa_investimento: formData.faixaInvestimento || '',
-                como_conheceu: formData.comoConheceu || '',
+                // Campos padrão RD Station
+                'Empreendimento': 'Piemonté Atibaia',
+                'Origem do Lead': 'LP Piemonté',
+                // Campos personalizados (criar no RD Station > Configurações > Campos personalizados)
+                'cf_interesse': formData.interesse || '',
+                'cf_tempo_compra': formData.tempoCompra || '',
+                'cf_faixa_investimento': formData.faixaInvestimento || '',
+                'cf_como_conheceu': formData.comoConheceu || '',
+                // UTM e tracking
                 c_utmz: document.cookie.match(/__utmz=([^;]+)/) ? document.cookie.match(/__utmz=([^;]+)/)[1] : '',
-                traffic_source: formData.source || document.referrer || 'direto',
+                traffic_source: 'LP Piemonté',
                 client_id: document.cookie.match(/_ga=([^;]+)/) ? document.cookie.match(/_ga=([^;]+)/)[1] : ''
             };
 
