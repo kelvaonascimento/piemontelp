@@ -1700,10 +1700,12 @@ const a=JSON.parse(document.getElementById("wp-emoji-settings").textContent),o=(
                         email: emailToSend,
                         mobile_phone: formData.phone ? formData.phone.replace(/\D/g, '') : '',
                         cf_empreendimento: 'Piemonté Atibaia',
-                        cf_interesse: formData.interesse || '',
-                        cf_tempo_compra: formData.tempoCompra || '',
-                        cf_faixa_investimento: formData.faixaInvestimento || '',
-                        cf_como_conheceu: formData.comoConheceu || '',
+                        cf_id_empreendimento: '3',
+                        internal_source: '3',
+                        cf_cf_interesse: formData.interesse || '',
+                        cf_cf_tempo_compra: formData.tempoCompra || '',
+                        cf_cf_faixa_investimento: formData.faixaInvestimento || '',
+                        cf_cf_como_conheceu: formData.comoConheceu || '',
                         traffic_source: window.location.href,
                         tags: ['piemonte', 'landing-page', currentFormType]
                     }
